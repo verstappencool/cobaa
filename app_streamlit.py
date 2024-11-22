@@ -50,10 +50,10 @@ taxonomy_data = {
 }
 
 # Aplikasi Streamlit
-st.title("Klasifikasi Kucing Besar - Keluarga Felidae")
+st.title("Klasifikasi Kucing - Keluarga Felidae")
 st.markdown(
     """
-    Aplikasi ini digunakan untuk mengklasifikasikan gambar kucing besar dari keluarga taksonomi **Felidae**.
+    Aplikasi ini digunakan untuk mengklasifikasikan gambar kucing dari keluarga taksonomi **Felidae**.
     Upload gambar, dan aplikasi akan menampilkan prediksi spesies, taksonomi, serta deskripsi singkat.
     """
 )
