@@ -1,34 +1,87 @@
 import streamlit as st
-import requests
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
 from PIL import Image
-from io import BytesIO
 
-# URL API Flask
-api_url = "http://localhost:5000/predict"
+# Nama-nama kelas (kelas-kelas yang sudah dilatih pada model)
+class_names = ['Cheetah', 'Jaguar', 'Jaguar_Hitam', 'Leopard', 'Lion', 'Puma', 'Tiger']
 
-st.title("Prediksi Kucing Besar")
+# Memuat model yang telah disimpan
+model = load_model('my_model-2.h5')
 
-# Upload gambar
-uploaded_file = st.file_uploader("Pilih gambar kucing besar", type=["jpg", "png", "jpeg"])
+# Fungsi prediksi
+@tf.function
+def predict_image(img_array):
+    return model(img_array)
+
+# Data taksonomi
+taxonomy_data = {
+    "Cheetah": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Acinonyx, Species: Acinonyx jubatus",
+        "deskripsi": "Cheetah adalah kucing besar yang terkenal karena kecepatannya."
+    },
+    "Jaguar": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Panthera, Species: Panthera onca",
+        "deskripsi": "Jaguar adalah kucing besar yang hidup di hutan hujan tropis Amerika."
+    },
+    "Jaguar_Hitam": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Panthera, Species: Panthera onca (Varian melanistik)",
+        "deskripsi": "Jaguar Hitam adalah varian melanistik dari jaguar yang memiliki warna hitam pekat."
+    },
+    "Leopard": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Panthera, Species: Panthera pardus",
+        "deskripsi": "Leopard adalah kucing besar yang hidup di Afrika dan Asia, dikenal karena corak belangnya."
+    },
+    "Lion": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Panthera, Species: Panthera leo",
+        "deskripsi": "Lion adalah kucing besar yang dikenal dengan surai di sekitar lehernya, simbol kekuatan."
+    },
+    "Puma": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Puma, Species: Puma concolor",
+        "deskripsi": "Puma, atau cougar, adalah kucing besar yang tersebar di seluruh Amerika."
+    },
+    "Tiger": {
+        "taksonomi": "Kingdom: Animalia, Phylum: Chordata, Class: Mammalia, Order: Carnivora, Family: Felidae, Genus: Panthera, Species: Panthera tigris",
+        "deskripsi": "Tiger adalah kucing besar yang dikenal dengan garis-garis tubuhnya, hidup di Asia."
+    }
+}
+
+# Aplikasi Streamlit
+st.title("Klasifikasi Kucing Besar")
+st.write("Upload gambar untuk diklasifikasikan.")
+
+uploaded_file = st.file_uploader("Pilih file gambar", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Menampilkan gambar yang diupload
+    # Proses gambar
     img = Image.open(uploaded_file)
-    st.image(img, caption="Gambar yang Diupload", use_column_width=True)
+    img_resized = img.resize((224, 224))
+    img_array = np.array(img_resized) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
-    # Kirim gambar ke API Flask
-    files = {'file': uploaded_file.getvalue()}
-    response = requests.post(api_url, files=files)
+    # Prediksi
+    predictions = predict_image(img_array)
+    predictions_np = predictions.numpy()[0]
+    predicted_class_index = np.argmax(predictions_np)
+    predicted_class = class_names[predicted_class_index]
+    predicted_prob = np.max(predictions_np)
 
-    if response.status_code == 200:
-        result = response.json()
-        st.subheader("Hasil Prediksi:")
-        st.write(f"**Prediksi Kelas**: {result['predicted_class']}")
-        st.write(f"**Probabilitas**: {result['probability'] * 100:.2f}%")
+    # Tampilkan hasil
+    st.image(img, caption="Gambar yang diunggah", use_column_width=True)
+    st.write(f"**Prediksi Kelas:** {predicted_class}")
+    st.write(f"**Probabilitas:** {predicted_prob*100:.2f}%")
 
-        # Tampilkan probabilitas untuk semua kelas
-        st.write("**Probabilitas untuk Setiap Kelas**:")
-        for class_name, prob in result['class_probabilities'].items():
-            st.write(f"{class_name}: {prob * 100:.2f}%")
-    else:
-        st.error("Terjadi kesalahan dalam memprediksi gambar.")
+    # Tampilkan taksonomi
+    species_info = taxonomy_data.get(predicted_class, {})
+    if species_info:
+        st.write(f"**Taksonomi:** {species_info['taksonomi']}")
+        st.write(f"**Deskripsi:** {species_info['deskripsi']}")
+
+    # Probabilitas untuk setiap kelas
+    st.write("**Probabilitas untuk setiap kelas:**")
+    for i, class_name in enumerate(class_names):
+        if i < len(predictions_np):
+            st.write(f"{class_name}: {predictions_np[i] * 100:.2f}%")
