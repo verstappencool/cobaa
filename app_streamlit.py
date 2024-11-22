@@ -50,8 +50,13 @@ taxonomy_data = {
 }
 
 # Aplikasi Streamlit
-st.title("Klasifikasi Kucing Besar")
-st.write("Upload gambar untuk diklasifikasikan.")
+st.title("Klasifikasi Kucing Besar - Keluarga Felidae")
+st.markdown(
+    """
+    Aplikasi ini digunakan untuk mengklasifikasikan gambar kucing besar dari keluarga taksonomi **Felidae**.
+    Upload gambar, dan aplikasi akan menampilkan prediksi spesies, taksonomi, serta deskripsi singkat.
+    """
+)
 
 uploaded_file = st.file_uploader("Pilih file gambar", type=["jpg", "jpeg", "png"])
 
@@ -71,17 +76,22 @@ if uploaded_file is not None:
 
     # Tampilkan hasil
     st.image(img, caption="Gambar yang diunggah", use_column_width=True)
-    st.write(f"**Prediksi Kelas:** {predicted_class}")
+    st.subheader("Hasil Prediksi")
+    st.write(f"**Spesies yang terdeteksi:** {predicted_class}")
     st.write(f"**Probabilitas:** {predicted_prob*100:.2f}%")
 
     # Tampilkan taksonomi
     species_info = taxonomy_data.get(predicted_class, {})
     if species_info:
+        st.markdown("### Informasi Taksonomi dan Deskripsi")
         st.write(f"**Taksonomi:** {species_info['taksonomi']}")
         st.write(f"**Deskripsi:** {species_info['deskripsi']}")
 
     # Probabilitas untuk setiap kelas
-    st.write("**Probabilitas untuk setiap kelas:**")
+    st.markdown("### Probabilitas Semua Kelas")
     for i, class_name in enumerate(class_names):
         if i < len(predictions_np):
             st.write(f"{class_name}: {predictions_np[i] * 100:.2f}%")
+
+st.markdown("---")
+st.info("Pastikan gambar yang diunggah merupakan anggota keluarga Felidae untuk hasil yang lebih akurat.")
